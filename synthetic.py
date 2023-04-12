@@ -1,25 +1,69 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import networkx as nx
+from misc import powerset, show_graph_with_labels, create_graph
 
-np.random.seed(2)
+np.random.seed(3)
 
-def show_graph_with_labels(adjacency_matrix):
-    rows, cols = np.where(adjacency_matrix == 1)
-    edges = zip(rows.tolist(), cols.tolist())
-    gr = nx.Graph()
-    gr.add_edges_from(edges)
-    nx.draw(gr, node_size=500)
-    plt.show()
+def is_valid(candidate_clique, list_maximal_cliques):
+    for maximal_cliques in list_maximal_cliques:
+        exists_flag = False
+        for maximal_clique in maximal_cliques:
+            if set(candidate_clique) <= set(maximal_clique):
+                exists_flag = True
+        if not exists_flag:
+            return False
+    return True
 
-def create_graph(adjacency_matrix):
-    rows, cols = np.where(adjacency_matrix == 1)
-    edges = zip(rows.tolist(), cols.tolist())
-    gr = nx.Graph()
-    gr.add_edges_from(edges)
+def exist_superset(canidate_set, list_sets, proper = True):
+    supersets = []
+    for one_set in list_sets:
+        if proper:
+            if set(canidate_set) < set(one_set):
+                supersets.append(list(one_set))
+        else:
+            if set(canidate_set) <= set(one_set):
+                supersets.append(list(one_set))
+    return supersets
 
-    return gr
+def not_maximal(candidate_set, list_valid_subsets, set_all_maximal_cliques):
+    # check if a subset of another set
+    supersets = exist_superset(candidate_set, list_valid_subsets)
+    if len(supersets) == 0:
+        return False
 
+    for superset in supersets:
+        exist_flag = True
+        for max_cliq in set_all_maximal_cliques:
+            if set(candidate_set) > set(max_cliq) or set(superset) > set(max_cliq):
+                exist_flag = False
+                break
+        if exist_flag:
+            return True
+    return False
+
+def is_complete_collection(candidate_collention, set_all_maximal_cliques):
+    for maximal_clique in set_all_maximal_cliques:
+        maximal_sets_with_intersections = []
+        for maximal_valid_set in candidate_collention:
+            if not set(maximal_valid_set).isdisjoint(maximal_clique):
+                maximal_sets_with_intersections.append(maximal_valid_set)
+        
+        exist_flag = False
+        for collection_with_intersection in powerset(maximal_sets_with_intersections):
+            if set().union(*collection_with_intersection) == set(maximal_clique):
+                exist_flag = True
+                break
+        if not exist_flag:
+            return False
+    return True
+
+def identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, mode="purechild"):
+    if mode == 'purechild':
+        for candidate_collention in powerset(list_maximal_subsets):      
+            if is_complete_collection(candidate_collention, set_all_maximal_cliques):
+                return candidate_collention
+        
+        raise ValueError("Bipartie graph cannot be identified assuming pure child")
 
 class BipGraph():
     """
@@ -56,7 +100,7 @@ class BipGraph():
 
             # generate_weights (might be unstable to generate weights using gaussian. because some weights might be too small)
             # self.weights = np.abs(np.random.normal(size=self.weights.shape))
-            self.weights = np.abs(np.random.uniform(low=-1, high=1, size=self.weights.shape))
+            self.weights = np.abs(np.random.uniform(low=0.25, high=1, size=self.weights.shape))
             self.weights *= self.adj
             self.weights /= np.linalg.norm(self.weights, axis=1, keepdims=True)
 
@@ -92,7 +136,7 @@ class LatentDAG():
             # generate_weights
             # only positive weights
             # self.weights = np.abs(np.random.normal(size=self.weights.shape))
-            self.weights = np.abs(np.random.uniform(low=-1, high=1, size=self.weights.shape))
+            self.weights = np.abs(np.random.uniform(low=0.25, high=1, size=self.weights.shape))
             self.weights *= self.adj
             for i in range(self.num_hidden):
                 norm = np.linalg.norm(self.weights[i,:])
@@ -116,7 +160,7 @@ class Latent_and_Bipartite_graph():
     """
     Class that combines information about Latent and Bipartite causal graphs
     """
-    def __init__(self, num_hidden, num_observed, epsilon = 0.1, latent_dag_density = 0.5, bip_graph_density = 0.5):
+    def __init__(self, num_hidden, num_observed, epsilon = 0.1, latent_dag_density = 0.9, bip_graph_density = 0.5):
         self.num_hidden = num_hidden
         self.num_observed = num_observed
 
@@ -142,6 +186,7 @@ MMgraph = Latent_and_Bipartite_graph(num_hidden, num_observed)
 # create udgs and find all maximal cliques
 list_covs = []
 list_maximal_cliques = []
+set_all_maximal_cliques = [] # unique set of maxmial cliques
 for i in range(-1, num_observed-1):
     observed = MMgraph.generate_samples(n=num_samples, int_target=i)
     cov = np.corrcoef(observed)
@@ -151,13 +196,81 @@ for i in range(-1, num_observed-1):
     udg_adj = (np.abs(cov) >= 0.1).astype(int)
 
     # used for debugging
-    # show_graph_with_labels(adj)
+    # show_graph_with_labels(udg_adj)
 
     # find all the maximal cliques
     gr = create_graph(udg_adj)
-    max_clique_list = set(nx.find_cliques(gr))
-    list_maximal_cliques.append(max_clique_list)
+    max_clique_list = list(nx.find_cliques(gr))
 
-print(list_maximal_cliques)
+    for max_clique in max_clique_list:
+        if max_clique not in set_all_maximal_cliques:
+            set_all_maximal_cliques.append(max_clique)
+    if max_clique_list not in list_maximal_cliques:
+        list_maximal_cliques.append(max_clique_list)
+
+# print(list_maximal_cliques)
+# print(set_all_maximal_cliques)
+
 
 # find all maxmial valid subsets
+list_valid_subsets = []
+for candidate_set in powerset(range(num_observed)):
+    if len(candidate_set) == 0:
+        continue
+    else:
+        if is_valid(candidate_set, list_maximal_cliques):
+            list_valid_subsets.append(list(candidate_set))
+
+list_maximal_subsets = []
+for candidate_set in list_valid_subsets:
+    if not not_maximal(candidate_set, list_valid_subsets, set_all_maximal_cliques):
+        list_maximal_subsets.append(candidate_set)
+
+"""
+identify bipartite graph
+"""
+biparG = identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques)
+print(biparG)
+
+"""
+identify latent graph
+"""
+
+# step 0: create mG list
+mG = []
+nb_estimated_latents = len(biparG)
+for maximal_clique in list_maximal_cliques:
+    mG_per_inter = []
+    for i in range(nb_estimated_latents):
+        for j in range(i+1, nb_estimated_latents):
+            union = set(biparG[i] + biparG[j])
+            if len(exist_superset(union, maximal_clique, proper=False)) == 0:
+                mG_per_inter.append((i, j))
+
+    mG.append(mG_per_inter)
+
+# step 1: remove any pairs that has appeared twice
+
+count_matrix = np.zeros((nb_estimated_latents, nb_estimated_latents))
+for mG_per_inter in mG:
+    for pair in mG_per_inter:
+        count_matrix[pair[0]][pair[1]] += 1
+        count_matrix[pair[1]][pair[0]] += 1
+
+to_delete = []
+for i in range(nb_estimated_latents): 
+    for j in range(i+1, nb_estimated_latents):
+        if count_matrix[i][j] > 1:
+            to_delete.append((i, j))
+
+mG_deleted = []
+for mG_per_inter in mG:
+    mG_deleted.append(list(x for x in mG_per_inter if x not in to_delete))
+
+# step 2: Add edges for colliders
+for mG_per_inter in mG_deleted:
+    if len(mG_per_inter) > 1:
+        common_element = list(set(mG_per_inter[0]).intersection(set(mG_per_inter[1])))[0]
+        
+
+        
