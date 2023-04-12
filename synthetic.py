@@ -139,6 +139,7 @@ num_observed = 4
 num_samples = 1000
 MMgraph = Latent_and_Bipartite_graph(num_hidden, num_observed)
 
+# create udgs and find all maximal cliques
 list_covs = []
 list_maximal_cliques = []
 for i in range(-1, num_observed-1):
@@ -154,7 +155,9 @@ for i in range(-1, num_observed-1):
 
     # find all the maximal cliques
     gr = create_graph(udg_adj)
-    list_maximal_cliques.append(list(nx.find_cliques(gr)))
+    max_clique_list = set(nx.find_cliques(gr))
+    list_maximal_cliques.append(max_clique_list)
 
+print(list_maximal_cliques)
 
-
+# find all maxmial valid subsets
