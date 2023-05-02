@@ -21,7 +21,7 @@ def find_maximal_cliques(MMgraph, options):
     for i in range(-1, num_hidden):
         if options.puregraph:
             udg_adj = MMgraph.generate_samples(n=num_samples, int_target=i, puregraph=options.puregraph)
-            print(udg_adj)
+            # print(udg_adj)
         else:
             observed = MMgraph.generate_samples(n=num_samples, int_target=i)
             cov = np.corrcoef(observed)
@@ -56,8 +56,7 @@ def find_maximal_cliques(MMgraph, options):
     for candidate_set in list_valid_subsets:
         if not not_maximal(candidate_set, list_valid_subsets, set_all_maximal_cliques):
             list_maximal_subsets.append(candidate_set)
-    print("-----")
-    print(list_maximal_cliques)
+
     return list_maximal_subsets, set_all_maximal_cliques, list_maximal_cliques
 
 def identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, mode="purechild"):
@@ -67,21 +66,16 @@ def identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, mode=
             list_maximal_subsets_non_redudant.append(maximal_subset)
 
     if mode == 'purechild':
-        # print("maximal subsets")
-        # print(list_maximal_subsets)
-        # print(set_all_maximal_cliques)
         for candidate_collention in powerset(list_maximal_subsets):  
             if is_complete_collection(candidate_collention, set_all_maximal_cliques):
                 return pure_filter(candidate_collention)
-        
-        # raise ValueError("Bipartie graph cannot be identified assuming pure child")
+
         return pure_filter(list_maximal_subsets_non_redudant)
     
     if mode == 'singlesource':
         return list_maximal_subsets_non_redudant
 
 def identify_latent_graph(biparG, list_maximal_cliques):
-    # print("identifying latent graph")
     nb_estimated_latents = len(biparG)
     estimated_adj_matrix = np.zeros((nb_estimated_latents, nb_estimated_latents))
     intervention_target_set = set()
@@ -89,15 +83,12 @@ def identify_latent_graph(biparG, list_maximal_cliques):
     # step 0: create mG list
     mG = []
 
-    # print(list_maximal_cliques)
     for maximal_clique in list_maximal_cliques:
         mG_per_inter = []
         for i in range(nb_estimated_latents):
             for j in range(i+1, nb_estimated_latents):
                 union = set(biparG[i] + biparG[j])
-                # print(i, j)
-                # print(union)
-                # print(maximal_clique)
+
                 if len(exist_superset(union, maximal_clique, proper=False)) == 0:
                     mG_per_inter.append((i, j))
                     # if there is only one intervene distribution, put everything twice
@@ -105,7 +96,7 @@ def identify_latent_graph(biparG, list_maximal_cliques):
                         mG_per_inter.append((i, j))
 
         mG.append(mG_per_inter)
-    # print(mG)
+
     # step 1: remove any pairs that has appeared twice
     count_matrix = np.zeros((nb_estimated_latents, nb_estimated_latents))
     for mG_per_inter in mG:
@@ -123,8 +114,6 @@ def identify_latent_graph(biparG, list_maximal_cliques):
     for mG_per_inter in mG:
         mG_deleted.append(list(x for x in mG_per_inter if x not in to_delete))
 
-    # print("after step 1")
-    # print(estimated_adj_matrix)
     # step 2: Add edges for colliders
     set_mG_per_inter = []
     for mG_per_inter in mG_deleted:
@@ -153,8 +142,6 @@ def identify_latent_graph(biparG, list_maximal_cliques):
     for mG_per_inter in set_mG_per_inter:
         mG_deleted.remove(mG_per_inter)
 
-    # print("after step 2")
-    # print(estimated_adj_matrix)
     # step 3: Add compelled edges
     newInv = True
     while newInv:
@@ -186,9 +173,6 @@ def identify_latent_graph(biparG, list_maximal_cliques):
         for mG_per_inter in set_mG_per_inter:
             mG_deleted.remove(mG_per_inter)
 
-    # print("after step 3")
-    # print(estimated_adj_matrix)
-    # print(mG_deleted)
     # step 4: Add unoriented edges
     for mG_per_inter in mG_deleted:
         assert(len(mG_per_inter) <= 1)
@@ -223,7 +207,6 @@ if __name__ == '__main__':
     stats_dict["metrics_list"] = []
 
     for _ in tqdm(range(nb_experiments)):
-        # print("new experiment")
         stats_dict["total_num_exp"] += 1
         # Create graph
         MMgraph = Latent_and_Bipartite_graph(args.num_hidden, args.num_observed)
@@ -236,22 +219,11 @@ if __name__ == '__main__':
         if len(biparG) > args.num_hidden:
             stats_dict["bi_failure"] += 1
             stats_dict["failure"] += 1
-            # print(biparG)
-            # exit()
             
             continue
-        # else:
-        #     print("biparite graph")
-        #     print(biparG)
 
-        # print(MMgraph.bipgraph.adj)
-        # print(MMgraph.latentdag.adj)
-        
-        print(biparG)
         # Identify the latent graph
         latentG = identify_latent_graph(biparG, list_maximal_cliques)
-        # print("latent graph")
-        print(latentG)
 
         # Evaluation
         # step 0: create estimated_biadj
@@ -290,29 +262,10 @@ if __name__ == '__main__':
             final_metrics = get_metrics(MMgraph, latentG, biparG, mapping)
 
         stats_dict["metrics_list"].append(final_metrics)
-        print(final_metrics)
-        # if final_metrics[2]["undirected_extra"] > 0 or final_metrics[1]["undirected_extra"] > 0:
-        if final_metrics[2]["undirected_extra"] > 0:
-            exit()
 
-        # print(biparG)
-        # print(final_metrics[1])
     # calculate failure rate
     print(args.num_hidden, args.num_observed)
 
-
-    # shd_list = []
-    # nb_edges_list = []
-    # extra_list = []
-    # missing_list = []
-    # for metrics in stats_dict["metrics_list"]:
-    #     shd_list.append(metrics[0]["undirected_extra"])
-    #     extra_list.append(metrics[0]["undirected_missing"])
-    #     missing_list.append(metrics[0]["shd"])
-    #     nb_edges_list.append(metrics[0]["total_edges"])
-
-
-    # print(stats_dict["bi_failure"]/stats_dict["total_num_exp"], stats_dict["failure"]/stats_dict["total_num_exp"], np.average(np.array(shd_list)), np.average(np.array(extra_list)),np.average(np.array(missing_list)), np.average(np.array(nb_edges_list)))
 
     print(stats_dict["bi_failure"]/stats_dict["total_num_exp"], stats_dict["failure"]/stats_dict["total_num_exp"])
 

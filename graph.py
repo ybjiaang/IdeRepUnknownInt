@@ -24,8 +24,7 @@ class BipGraph():
 
         self.gen_random_graph()
 
-        # self.adj = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1], [1, 1, 1]])
-        print(self.adj)
+        # print(self.adj)
 
     def gen_random_graph(self, attempts = 1000):
         if self.graphtype == 'purechild':
@@ -50,13 +49,9 @@ class BipGraph():
             self.adj = self.adj | np.random.binomial(1, self.prob, size = self.adj.shape)
 
         # generate_weights (might be unstable to generate weights using gaussian. because some weights might be too small)
-        # self.weights = np.abs(np.random.normal(size=self.weights.shape))
         # 0.5 - 2
-        # self.weights = np.abs(np.random.uniform(low=0.5, high=2, size=self.weights.shape)) * np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
-        self.weights = np.abs(np.random.uniform(low=0.5, high=2, size=self.weights.shape)) * np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
+        self.weights = np.abs(np.random.uniform(low=0.5, high=2, size=self.weights.shape)) #* np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
         self.weights *= self.adj
-        # self.weights /= np.linalg.norm(self.weights, axis=1, keepdims=True)
-        # print(self.weights)
 
     def generate_samples(self, latents):
         _, n = latents.shape
@@ -75,10 +70,7 @@ class LatentDAG():
         self.epsilon = epsilon
 
         self.get_random_latent_dag()
-        
-        # self.adj = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
-        # self.adj = np.array([[0, 0], [1, 0]])
-        print(self.adj)
+        # print(self.adj)
     
     def get_random_latent_dag(self):
         # nothing to be done here
@@ -104,15 +96,12 @@ class LatentDAG():
 
         # generate_weights
         # only positive weights
-        # self.weights = np.abs(np.random.normal(size=self.weights.shape))
-        self.weights = np.random.uniform(low=0.5, high=2, size=self.weights.shape) * np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
+        self.weights = np.random.uniform(low=0.5, high=2, size=self.weights.shape) #* np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
         self.weights *= self.adj
         # for i in range(self.num_hidden):
         #     norm = np.linalg.norm(self.weights[i,:])
         #     if norm > 0:
         #         self.weights[i,:] /= norm
-
-        # print(self.weights)
             
     
     def generate_samples(self, n, int_target):
@@ -164,8 +153,7 @@ class Latent_and_Bipartite_graph():
 
                     connecting_B[i, j] = row_i @ B @ row_j + row_j @ B @ row_i
                     connecting_B[j, i] = connecting_B[i, j]
-            # print("conneting B")
-            # print(connecting_B)
+
             udj_cov = np.identity(self.num_observed)
             for i in range(self.num_observed):
                 for j in range(i+1, self.num_observed):
