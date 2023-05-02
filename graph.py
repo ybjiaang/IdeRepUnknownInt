@@ -93,7 +93,6 @@ class LatentDAG():
                     self.adj[self.perm[0], self.perm[j]] = 1
             
 
-
         # generate_weights
         # only positive weights
         self.weights = np.random.uniform(low=0.5, high=2, size=self.weights.shape) #* np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])

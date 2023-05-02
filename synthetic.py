@@ -9,7 +9,7 @@ import argparse
 
 from graph import Latent_and_Bipartite_graph
 
-np.random.seed(3)
+np.random.seed(0)
 
 def find_maximal_cliques(MMgraph, options):
     # create udgs and find all maximal cliques
