@@ -3,6 +3,25 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from itertools import chain, combinations
 
+def pure_filter(candidate_sets):
+    ret_set = []
+
+    for candidate_set in candidate_sets:
+        duplicate_elem = []
+        for elem in candidate_set:
+            for compare_set in candidate_sets:
+                if set(compare_set) == set(candidate_set):
+                    continue
+                if elem in compare_set:
+                    duplicate_elem.append(elem)
+                    break
+
+        if set(duplicate_elem) != set(candidate_set):
+            ret_set.append(candidate_set)
+
+    return ret_set
+        
+
 def powerset(iterable):
     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
     s = list(iterable)
@@ -52,11 +71,11 @@ def not_maximal(candidate_set, list_valid_subsets, set_all_maximal_cliques):
     supersets = exist_superset(candidate_set, list_valid_subsets)
     if len(supersets) == 0:
         return False
-
+    
     for superset in supersets:
         exist_flag = True
         for max_cliq in set_all_maximal_cliques:
-            if set(candidate_set) > set(max_cliq) or set(superset) > set(max_cliq):
+            if set(candidate_set) <= set(max_cliq) and not (set(superset) <= set(max_cliq)):
                 exist_flag = False
                 break
         if exist_flag:
