@@ -4,9 +4,9 @@ do
 IFS=","; set -- $SETTING;
 
 echo "pure child"
-python synthetic.py --num_hidden $1 --num_observed $2 --mode purechild
+python main.py --num_hidden $1 --num_observed $2 --mode purechild
 
 echo "single source"
-python synthetic.py --num_hidden $1 --num_observed $2 --mode singlesource
+python main.py --num_hidden $1 --num_observed $2 --mode singlesource
 
 done
