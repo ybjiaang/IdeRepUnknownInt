@@ -50,7 +50,7 @@ class BipGraph():
 
         # generate_weights (might be unstable to generate weights using gaussian. because some weights might be too small)
         # 0.5 - 2
-        self.weights = np.abs(np.random.uniform(low=0.5, high=2, size=self.weights.shape)) #* np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
+        self.weights = np.abs(np.random.uniform(low=0.5, high=2, size=self.weights.shape)) * np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
         self.weights *= self.adj
 
     def generate_samples(self, latents):
@@ -95,7 +95,7 @@ class LatentDAG():
 
         # generate_weights
         # only positive weights
-        self.weights = np.random.uniform(low=0.5, high=2, size=self.weights.shape) #* np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
+        self.weights = np.random.uniform(low=0.5, high=2, size=self.weights.shape) * np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
         self.weights *= self.adj
         # for i in range(self.num_hidden):
         #     norm = np.linalg.norm(self.weights[i,:])

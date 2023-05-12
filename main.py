@@ -28,7 +28,7 @@ def find_maximal_cliques(MMgraph, options):
             list_covs.append(cov)
 
             # create the adj for udg
-            udg_adj = (np.abs(cov) >= 0.1).astype(int)
+            udg_adj = (np.abs(cov) >= 0.05).astype(int)
 
         # used for debugging
         # show_graph_with_labels(udg_adj)
@@ -197,7 +197,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    num_samples = 1000
+    num_samples = 10000
 
     nb_experiments = 100
     stats_dict = {}
