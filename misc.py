@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from itertools import chain, combinations
 
 def pure_filter(candidate_sets):
+    return candidate_sets
     ret_set = []
 
     for candidate_set in candidate_sets:
@@ -82,18 +83,43 @@ def not_maximal(candidate_set, list_valid_subsets, set_all_maximal_cliques):
             return True
     return False
 
-def is_complete_collection(candidate_collention, set_all_maximal_cliques):
-    for maximal_clique in set_all_maximal_cliques:
-        maximal_sets_with_intersections = []
-        for maximal_valid_set in candidate_collention:
-            if not set(maximal_valid_set).isdisjoint(maximal_clique):
-                maximal_sets_with_intersections.append(maximal_valid_set)
-        
-        exist_flag = False
-        for collection_with_intersection in powerset(maximal_sets_with_intersections):
-            if set().union(*collection_with_intersection) == set(maximal_clique):
-                exist_flag = True
-                break
-        if not exist_flag:
+def is_edge_cover(smaller_sets, whole_sets):
+    nb_all_elements = len(set().union(*whole_sets))
+
+    whole_adj = np.zeros((nb_all_elements, nb_all_elements))
+    smaller_adj = np.zeros((nb_all_elements, nb_all_elements))
+
+    for smaller_set in smaller_sets:
+        for i in smaller_set:
+            for j in smaller_set:
+                smaller_adj[i, j] = 1
+                smaller_adj[j, i] = 1
+
+    for whole_set in whole_sets:
+        for i in whole_set:
+            for j in whole_set:
+                whole_adj[i, j] = 1
+                whole_adj[j, i] = 1
+
+    if np.linalg.norm(smaller_adj - whole_adj) == 0:
+        return True
+    else:
+        return False
+
+def is_complete_collection(candidate_collention, list_maximal_cliques):
+    for maximal_cliques_intervene in list_maximal_cliques:
+        shattered_set = []
+        for maximal_clique in maximal_cliques_intervene:
+            maximal_sets_with_intersections = []
+            for maximal_valid_set in candidate_collention:
+                if not set(maximal_valid_set).isdisjoint(maximal_clique):
+                    maximal_sets_with_intersections.append(maximal_valid_set)
+
+            for collection_with_intersection in powerset(maximal_sets_with_intersections):
+                if set().union(*collection_with_intersection) == set(maximal_clique):
+                    shattered_set.append(maximal_clique)
+            
+        if not is_edge_cover(shattered_set, maximal_cliques_intervene):
             return False
+        
     return True

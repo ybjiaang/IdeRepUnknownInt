@@ -59,7 +59,7 @@ def find_maximal_cliques(MMgraph, options):
 
     return list_maximal_subsets, set_all_maximal_cliques, list_maximal_cliques
 
-def identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, mode="purechild"):
+def identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, list_maximal_cliques, mode="purechild"):
     list_maximal_subsets_non_redudant = []
     for maximal_subset in list_maximal_subsets:
         if len(exist_superset(maximal_subset, list_maximal_subsets)) == 0:
@@ -67,7 +67,7 @@ def identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, mode=
 
     if mode == 'purechild':
         for candidate_collention in powerset(list_maximal_subsets):  
-            if is_complete_collection(candidate_collention, set_all_maximal_cliques):
+            if is_complete_collection(candidate_collention, list_maximal_cliques):
                 return pure_filter(candidate_collention)
 
         return pure_filter(list_maximal_subsets_non_redudant)
@@ -215,7 +215,8 @@ if __name__ == '__main__':
         list_maximal_subsets, set_all_maximal_cliques, list_maximal_cliques = find_maximal_cliques(MMgraph, args)
 
         # Identify the bipartite graph
-        biparG = identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, mode=args.mode)
+        biparG = identify_bipartie_graph(list_maximal_subsets, set_all_maximal_cliques, list_maximal_cliques, mode=args.mode)
+        # print(biparG)
         if len(biparG) > args.num_hidden:
             stats_dict["bi_failure"] += 1
             stats_dict["failure"] += 1
@@ -262,6 +263,10 @@ if __name__ == '__main__':
             final_metrics = get_metrics(MMgraph, latentG, biparG, mapping)
 
         stats_dict["metrics_list"].append(final_metrics)
+
+        # if final_metrics[1]['undirected_extra'] > 0:
+        #     print(final_metrics)
+        #     exit()
 
     # calculate failure rate
     print(args.num_hidden, args.num_observed)
