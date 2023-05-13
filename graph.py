@@ -5,15 +5,16 @@ import networkx as nx
 Notation for adjancy matrix
 If X_i -> X_j, then A[j][i] = 1. In other words, the ith row of the matrix is all the parents of X_i
 """
-
-
+import math
+def sigmoid(x):
+  return 1 / (1 + np.exp(-x))
 
 class BipGraph():
     """
     The class that contains infomation about the bipartite causal graph between 
     observed and hidden variables
     """
-    def __init__(self, num_hidden, num_observed, prob = 0.5, epsilon=1, graphtype='purechild'):
+    def __init__(self, num_hidden, num_observed, configs, prob = 0.5, epsilon=1, graphtype='purechild'):
         self.num_hidden = num_hidden
         self.num_observed = num_observed
         self.adj = np.zeros((self.num_observed, self.num_hidden))
@@ -21,6 +22,7 @@ class BipGraph():
         self.graphtype = graphtype
         self.epsilon = epsilon
         self.prob = prob
+        self.config = configs
 
         self.gen_random_graph()
 
@@ -56,18 +58,24 @@ class BipGraph():
     def generate_samples(self, latents):
         _, n = latents.shape
 
-        observed = self.weights @ latents + np.random.normal(0,self.epsilon, (self.num_observed, n))
+        # observed = self.weights @ latents + np.random.normal(0, self.epsilon, (self.num_observed, n))
+        if self.config.nonlinear:
+            # observed = self.adj @ nonlinearf(latents) + np.random.multivariate_normal(np.zeros(self.num_observed), self.epsilon * np.identity(self.num_observed), size=n).T
+            observed = np.tanh(self.adj @ latents) + np.sqrt(0.1) * np.random.multivariate_normal(np.zeros(self.num_observed), self.epsilon * np.identity(self.num_observed), size=n).T
+        else:
+            observed = self.weights @ latents + np.random.multivariate_normal(np.zeros(self.num_observed), self.epsilon * np.identity(self.num_observed), size=n).T
         
         return observed
 
 class LatentDAG():
-    def __init__(self, num_hidden, edge_prob = 0.5, epsilon=1, graphtype='purechild'):
+    def __init__(self, num_hidden, configs, edge_prob = 0.5, epsilon=1, graphtype='purechild'):
         self.num_hidden = num_hidden
         self.adj = np.zeros((self.num_hidden, self.num_hidden))
         self.weights = np.zeros_like(self.adj)
         self.edge_prob = edge_prob
         self.graphtype = graphtype
         self.epsilon = epsilon
+        self.config = configs
 
         self.get_random_latent_dag()
         # print(self.adj)
@@ -94,7 +102,6 @@ class LatentDAG():
             
 
         # generate_weights
-        # only positive weights
         self.weights = np.random.uniform(low=0.5, high=2, size=self.weights.shape) * np.random.choice([-1, 1], size=self.weights.shape, p=[1./2, 1./2])
         self.weights *= self.adj
         # for i in range(self.num_hidden):
@@ -109,7 +116,12 @@ class LatentDAG():
             if i == int_target:
                 latent = np.random.normal(0,self.epsilon,n)
             else:
-                latent = self.weights[i, :] @ latents + np.random.normal(0,self.epsilon,n)
+                if self.config.nonlinear:
+                    # latent = self.weights[i, :] @ latents + np.random.normal(0,self.epsilon,n)
+                    # latent = self.adj[i,: ] @ nonlinearf(latents) + np.random.normal(0,self.epsilon,n)
+                    latent = sigmoid(self.adj[i,: ] @ latents) + np.random.normal(0,self.epsilon,n)
+                else:
+                    latent = self.weights[i, :] @ latents + np.random.normal(0,self.epsilon,n)
             latents[i,:] = latent
         
         return latents
@@ -119,12 +131,13 @@ class Latent_and_Bipartite_graph():
     """
     Class that combines information about Latent and Bipartite causal graphs
     """
-    def __init__(self, num_hidden, num_observed, epsilon = 0.1, latent_dag_density = 0.5, bip_graph_density = 0.6, mode='purechild'):
+    def __init__(self, num_hidden, num_observed, configs, epsilon = 1, latent_dag_density = 0.4, bip_graph_density = 0.4, mode='purechild'):
         self.num_hidden = num_hidden
         self.num_observed = num_observed
+        self.config = configs
 
-        self.latentdag = LatentDAG(num_hidden, epsilon = epsilon, edge_prob = latent_dag_density, graphtype = mode)
-        self.bipgraph = BipGraph(num_hidden, num_observed, epsilon = epsilon, prob = bip_graph_density, graphtype = mode)
+        self.latentdag = LatentDAG(num_hidden, configs, epsilon = epsilon, edge_prob = latent_dag_density, graphtype = mode)
+        self.bipgraph = BipGraph(num_hidden, num_observed, configs, epsilon = epsilon, prob = bip_graph_density, graphtype = mode)
 
     def generate_samples(self, n, int_target, puregraph = False):
         # If int_target is -1, then obversational distributions, otherwise, it is one of the hidden variables

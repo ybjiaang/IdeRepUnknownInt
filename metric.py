@@ -45,9 +45,12 @@ def count_accuracy(B_true, B_est):
 
 def get_metrics(MMgraph, latentG, biparG, mapping):
     num_hidden, num_observed = MMgraph.num_hidden, MMgraph.num_observed
-    B_true = [[0 for i in range(num_hidden + num_observed)] for j in range(num_hidden + num_observed)]
-    B_bi_true = [[0 for i in range(num_hidden + num_observed)] for j in range(num_hidden + num_observed)]
-    B_latent_true = [[0 for i in range(num_hidden + num_observed)] for j in range(num_hidden + num_observed)]
+    num_estimated_hidden = len(biparG)
+    num_max_hidden = max(num_hidden, num_estimated_hidden)
+
+    B_true = [[0 for i in range(num_max_hidden + num_observed)] for j in range(num_max_hidden + num_observed)]
+    B_bi_true = [[0 for i in range(num_max_hidden + num_observed)] for j in range(num_max_hidden + num_observed)]
+    B_latent_true = [[0 for i in range(num_max_hidden + num_observed)] for j in range(num_max_hidden + num_observed)]
 
     for u in range(num_hidden):
         for v in range(num_hidden):
@@ -61,9 +64,9 @@ def get_metrics(MMgraph, latentG, biparG, mapping):
                 B_true[num_hidden + v][u] = 1
                 B_bi_true[num_hidden + v][u] = 1
 
-    B_est = [[0 for i in range(num_hidden + num_observed)] for j in range(num_hidden + num_observed)]
-    B_bi_est = [[0 for i in range(num_hidden + num_observed)] for j in range(num_hidden + num_observed)]
-    B_latent_est = [[0 for i in range(num_hidden + num_observed)] for j in range(num_hidden + num_observed)]
+    B_est = [[0 for i in range(num_max_hidden + num_observed)] for j in range(num_max_hidden + num_observed)]
+    B_bi_est = [[0 for i in range(num_max_hidden + num_observed)] for j in range(num_max_hidden + num_observed)]
+    B_latent_est = [[0 for i in range(num_max_hidden + num_observed)] for j in range(num_max_hidden + num_observed)]
     nb_estimated_hidden = len(biparG)
     for u in range(nb_estimated_hidden):
         for v in range(u + 1, nb_estimated_hidden):

@@ -1,6 +1,6 @@
 import numpy as np
 import networkx as nx
-from misc import powerset, show_graph_with_labels, create_graph, is_valid, exist_superset, not_maximal, is_complete_collection, pure_filter
+from misc import powerset, show_graph_with_labels, create_graph, is_valid, exist_superset, not_maximal, is_complete_collection, pure_filter, create_udg
 import itertools
 from metric import get_metrics
 from tqdm import tqdm
@@ -13,23 +13,24 @@ np.random.seed(0)
 
 def find_maximal_cliques(MMgraph, options):
     # create udgs and find all maximal cliques
-    list_covs = []
     list_maximal_cliques = []
     set_all_maximal_cliques = [] # unique set of maxmial cliques
     num_hidden = MMgraph.num_hidden
     num_observed = MMgraph.num_observed
     for i in range(-1, num_hidden):
         if options.puregraph:
-            udg_adj = MMgraph.generate_samples(n=num_samples, int_target=i, puregraph=options.puregraph)
+            udg_adj = MMgraph.generate_samples(n=num_samples, int_target=i, puregraph=True)
             # print(udg_adj)
         else:
+            # udg_adj = MMgraph.generate_samples(n=num_samples, int_target=i, puregraph=True)
+            # print(udg_adj)
             observed = MMgraph.generate_samples(n=num_samples, int_target=i)
-            cov = np.corrcoef(observed)
-            list_covs.append(cov)
 
             # create the adj for udg
-            udg_adj = (np.abs(cov) >= 0.05).astype(int)
+            udg_adj = create_udg(observed)
 
+            # print(udg_adj)
+        # print("-----------------")
         # used for debugging
         # show_graph_with_labels(udg_adj)
 
@@ -191,15 +192,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--num_hidden', type=int, default= 3, help='number of hidden variables')
+    parser.add_argument('--nb_experiments', type=int, default= 100, help='number of hidden variables')
     parser.add_argument('--num_observed', type=int, default= 5, help='number of observeed variables')
     parser.add_argument('--mode', type=str, default= "purechild", help='mode =[purechild, singlesoure] ')
     parser.add_argument('--puregraph', action='store_true', help='compare all invariant models')
+    parser.add_argument('--nonlinear', action='store_true', help='nonlinear data generating process')
 
     args = parser.parse_args()
 
-    num_samples = 10000
+    num_samples = 1000
 
-    nb_experiments = 100
+    nb_experiments = args.nb_experiments
     stats_dict = {}
     stats_dict["total_num_exp"] = 0
     stats_dict["bi_failure"] = 0
@@ -209,7 +212,7 @@ if __name__ == '__main__':
     for _ in tqdm(range(nb_experiments)):
         stats_dict["total_num_exp"] += 1
         # Create graph
-        MMgraph = Latent_and_Bipartite_graph(args.num_hidden, args.num_observed)
+        MMgraph = Latent_and_Bipartite_graph(args.num_hidden, args.num_observed, args)
 
         # Find maximal cliques and maximal subsets
         list_maximal_subsets, set_all_maximal_cliques, list_maximal_cliques = find_maximal_cliques(MMgraph, args)
@@ -220,8 +223,9 @@ if __name__ == '__main__':
         if len(biparG) > args.num_hidden:
             stats_dict["bi_failure"] += 1
             stats_dict["failure"] += 1
+            # continue
             
-            continue
+        #     continue
 
         # Identify the latent graph
         latentG = identify_latent_graph(biparG, list_maximal_cliques)
@@ -237,21 +241,21 @@ if __name__ == '__main__':
         # Step 1: map
         true_biadj = MMgraph.bipgraph.adj
         mapping = None
-        for perm in itertools.permutations(list(range(nb_estimated_hidden))):
-            match = True
-            for i in range(nb_estimated_hidden):
-                    for j in range(args.num_observed):
-                        if true_biadj[j,perm[i]] != estimated_biadj[j, i]:
-                            match = False
-                            break
+        if len(biparG) <= args.num_hidden:
+            for perm in itertools.permutations(list(range(nb_estimated_hidden))):
+                match = True
+                for i in range(nb_estimated_hidden):
+                        for j in range(args.num_observed):
+                            if true_biadj[j,perm[i]] != estimated_biadj[j, i]:
+                                match = False
+                                break
 
-            if match:
-                    mapping = list(perm)
-                    break
+                if match:
+                        mapping = list(perm)
+                        break
         # Step 2: calculate the metrics
         if not mapping:
             final_metrics = {}
-            mapping = list(range(nb_estimated_hidden))
             for perm in itertools.permutations(list(range(nb_estimated_hidden))):
                 mapping = list(perm)
                 metrics = get_metrics(MMgraph, latentG, biparG, mapping)

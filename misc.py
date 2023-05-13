@@ -2,9 +2,47 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 from itertools import chain, combinations
+from xicor.xicor import Xi
+
+
+def create_udg(obsverd_samples):
+    n_variables = obsverd_samples.shape[0]
+    udg_adj = np.identity(n_variables)
+
+    p_values_matrix = np.zeros((n_variables, n_variables))
+    correlation_matrix = np.zeros((n_variables, n_variables))
+
+    for i in range(n_variables):
+        for j in  range(i+1, n_variables):
+            xi_obj = Xi(obsverd_samples[i, :], obsverd_samples[j, :])
+            correlation = xi_obj.correlation
+            # pvals = xi_obj.pval_asymptotic(ties=False, nperm=1000)
+            # if pvals < 0.2:
+            if np.abs(correlation) > 0.1:
+                udg_adj[i, j] = 1
+                udg_adj[j, i] = 1
+            correlation_matrix[i,j] = correlation
+            correlation_matrix[j,i] = correlation
+
+            # p_values_matrix[i, j] = pvals
+            # p_values_matrix[j, i] = pvals
+
+
+    # return udg_adj
+    # print(correlation_matrix)
+    # print(p_values_matrix)
+    # print(udg_adj.astype(int))
+
+    # cov = np.corrcoef(obsverd_samples)
+    # udg_adj = (np.abs(cov) >= 0.1).astype(int)
+
+    # print(np.abs(cov))
+    # print(udg_adj)
+
+    return udg_adj
 
 def pure_filter(candidate_sets):
-    return candidate_sets
+    # return candidate_sets
     ret_set = []
 
     for candidate_set in candidate_sets:
@@ -43,8 +81,6 @@ def create_graph(adjacency_matrix):
     gr.add_edges_from(edges)
 
     return gr
-
-
 
 def is_valid(candidate_clique, list_maximal_cliques):
     for maximal_cliques in list_maximal_cliques:
