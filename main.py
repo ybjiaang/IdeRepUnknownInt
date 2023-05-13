@@ -22,14 +22,14 @@ def find_maximal_cliques(MMgraph, options):
             udg_adj = MMgraph.generate_samples(n=num_samples, int_target=i, puregraph=True)
             # print(udg_adj)
         else:
-            # udg_adj = MMgraph.generate_samples(n=num_samples, int_target=i, puregraph=True)
-            # print(udg_adj)
+            udg_adj = MMgraph.generate_samples(n=num_samples, int_target=i, puregraph=True)
+            print(udg_adj)
             observed = MMgraph.generate_samples(n=num_samples, int_target=i)
 
             # create the adj for udg
             udg_adj = create_udg(observed)
 
-            # print(udg_adj)
+            print(udg_adj)
         # print("-----------------")
         # used for debugging
         # show_graph_with_labels(udg_adj)

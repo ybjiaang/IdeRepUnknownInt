@@ -9,6 +9,9 @@ import math
 def sigmoid(x):
   return 1 / (1 + np.exp(-x))
 
+def nonlinearf(x):
+    return x**2
+
 class BipGraph():
     """
     The class that contains infomation about the bipartite causal graph between 
@@ -26,7 +29,7 @@ class BipGraph():
 
         self.gen_random_graph()
 
-        # print(self.adj)
+        print(self.adj)
 
     def gen_random_graph(self, attempts = 1000):
         if self.graphtype == 'purechild':
@@ -61,7 +64,7 @@ class BipGraph():
         # observed = self.weights @ latents + np.random.normal(0, self.epsilon, (self.num_observed, n))
         if self.config.nonlinear:
             # observed = self.adj @ nonlinearf(latents) + np.random.multivariate_normal(np.zeros(self.num_observed), self.epsilon * np.identity(self.num_observed), size=n).T
-            observed = np.tanh(self.adj @ latents) + np.sqrt(0.1) * np.random.multivariate_normal(np.zeros(self.num_observed), self.epsilon * np.identity(self.num_observed), size=n).T
+            observed = (self.adj @ nonlinearf(latents)) + 0.1*np.random.multivariate_normal(np.zeros(self.num_observed), self.epsilon * np.identity(self.num_observed), size=n).T
         else:
             observed = self.weights @ latents + np.random.multivariate_normal(np.zeros(self.num_observed), self.epsilon * np.identity(self.num_observed), size=n).T
         
@@ -119,7 +122,8 @@ class LatentDAG():
                 if self.config.nonlinear:
                     # latent = self.weights[i, :] @ latents + np.random.normal(0,self.epsilon,n)
                     # latent = self.adj[i,: ] @ nonlinearf(latents) + np.random.normal(0,self.epsilon,n)
-                    latent = sigmoid(self.adj[i,: ] @ latents) + np.random.normal(0,self.epsilon,n)
+                    # latent = nonlinearf(self.adj[i,: ] @ latents) + np.random.normal(0,self.epsilon,n)
+                    latent = self.adj[i,: ] @ nonlinearf(latents) + np.random.normal(0,self.epsilon,n)
                 else:
                     latent = self.weights[i, :] @ latents + np.random.normal(0,self.epsilon,n)
             latents[i,:] = latent

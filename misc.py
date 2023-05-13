@@ -18,7 +18,7 @@ def create_udg(obsverd_samples):
             correlation = xi_obj.correlation
             # pvals = xi_obj.pval_asymptotic(ties=False, nperm=1000)
             # if pvals < 0.2:
-            if np.abs(correlation) > 0.1:
+            if np.abs(correlation) > 0.05:
                 udg_adj[i, j] = 1
                 udg_adj[j, i] = 1
             correlation_matrix[i,j] = correlation
@@ -29,7 +29,7 @@ def create_udg(obsverd_samples):
 
 
     # return udg_adj
-    # print(correlation_matrix)
+    print(correlation_matrix)
     # print(p_values_matrix)
     # print(udg_adj.astype(int))
 
