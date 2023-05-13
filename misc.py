@@ -29,7 +29,7 @@ def create_udg(obsverd_samples):
 
 
     # return udg_adj
-    print(correlation_matrix)
+    # print(correlation_matrix)
     # print(p_values_matrix)
     # print(udg_adj.astype(int))
 

@@ -29,7 +29,7 @@ class BipGraph():
 
         self.gen_random_graph()
 
-        print(self.adj)
+        # print(self.adj)
 
     def gen_random_graph(self, attempts = 1000):
         if self.graphtype == 'purechild':
