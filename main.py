@@ -6,6 +6,7 @@ from metric import get_metrics
 from tqdm import tqdm
 from collections import Counter
 import argparse
+from scipy import stats
 
 from graph import Latent_and_Bipartite_graph
 
@@ -195,10 +196,15 @@ if __name__ == '__main__':
     parser.add_argument('--nb_experiments', type=int, default= 100, help='number of hidden variables')
     parser.add_argument('--num_observed', type=int, default= 5, help='number of observeed variables')
     parser.add_argument('--mode', type=str, default= "purechild", help='mode =[purechild, singlesoure] ')
+    parser.add_argument('--dir', type=str, default= "./data", help='dictories to save pickles')
     parser.add_argument('--puregraph', action='store_true', help='compare all invariant models')
     parser.add_argument('--nonlinear', action='store_true', help='nonlinear data generating process')
 
     args = parser.parse_args()
+
+    import os
+    if not os.path.exists(args.dir):
+        os.makedirs(args.dir)
 
     num_samples = 1000
 
@@ -287,8 +293,10 @@ if __name__ == '__main__':
             for metrics in stats_dict["metrics_list"]:
                 values_list.append(metrics[exp][metric_key])
         
-            print(metric_key + ":" + str(np.average(np.array(values_list))), end =" ")
+            print(metric_key + ":" + str(np.average(np.array(values_list))) + " " + str(stats.sem(np.array(values_list))), end =" ")
 
         print("\n")
 
-        
+    import pickle 
+    with open(args.dir + "/" + args.mode + "_" + str(args.num_hidden) + "_" + str(args.num_observed) + '.pkl', 'wb') as f:
+        pickle.dump(stats_dict, f)
