@@ -135,7 +135,7 @@ class Latent_and_Bipartite_graph():
     """
     Class that combines information about Latent and Bipartite causal graphs
     """
-    def __init__(self, num_hidden, num_observed, configs, epsilon = 1, latent_dag_density = 0.4, bip_graph_density = 0.4, mode='purechild'):
+    def __init__(self, num_hidden, num_observed, configs, epsilon = 1, latent_dag_density = 0.5, bip_graph_density = 0.5, mode='purechild'):
         self.num_hidden = num_hidden
         self.num_observed = num_observed
         self.config = configs
